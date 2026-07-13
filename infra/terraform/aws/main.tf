@@ -83,7 +83,7 @@ resource "aws_route_table_association" "private_a" {
 
 variable "team" {
   type = string
-  default = "devops-sushi"
+  default = "sushiops"
 }
 
 output "vpc_id" {
