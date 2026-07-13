@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sushi-load
+  namespace: sushi
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: load-generator
+          image: ghcr.io/your-org/devops-sushi-load:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - --url
+            - http://sushi-api.sushi.svc.cluster.local
+            - --stages
+            - 5:60,40:180,120:240,20:120
+            - --workers
+            - "128"

@@ -1,0 +1,56 @@
+{
+  "title": "DevOps Sushi",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Orders per second",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(sushi_orders_total[1m]))",
+          "legendFormat": "orders/s"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Sushi API pods",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas{namespace=\"sushi\", deployment=\"sushi-api\"}",
+          "legendFormat": "replicas"
+        },
+        {
+          "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"sushi\", horizontalpodautoscaler=\"sushi-api\"}",
+          "legendFormat": "desired"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU usage",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"sushi\", pod=~\"sushi-api-.*\", container=\"sushi-api\"}[1m]))",
+          "legendFormat": "cores"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Order latency p95",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(sushi_order_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        }
+      ]
+    }
+  ]
+}

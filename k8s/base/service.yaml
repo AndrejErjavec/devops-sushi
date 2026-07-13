@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sushi-api
+  namespace: sushi
+  labels:
+    app.kubernetes.io/name: sushi-api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: sushi-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
