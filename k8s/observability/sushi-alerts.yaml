@@ -1,0 +1,33 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sushi-alerts
+  namespace: sushi
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: sushi.rules
+      rules:
+        - alert: SushiApiHighErrorRate
+          expr: |
+            sum(rate(sushi_orders_total{status!="accepted"}[5m]))
+            /
+            clamp_min(sum(rate(sushi_orders_total[5m])), 1)
+            > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Sushi API has high order error rate"
+        - alert: SushiApiScaledNearMax
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas{
+              namespace="sushi",
+              horizontalpodautoscaler="sushi-api"
+            } >= 10
+          for: 10m
+          labels:
+            severity: info
+          annotations:
+            summary: "Sushi API is scaled close to HPA maximum"
