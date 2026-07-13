@@ -1,2 +1,4 @@
-# devops-sushi
-Teads DevOps summer school
+# Teads DevOps summer school team sushi
+* Žan Stanković
+* Nina Baškarad
+* Andrej Erjavec
