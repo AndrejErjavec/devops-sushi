@@ -11,12 +11,24 @@ spec:
   minReplicas: 2
   maxReplicas: 12
   metrics:
+    # Primarna metrica: CPU (zagotovi scale-up pri splošni obremenitvi)
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
           averageUtilization: 60
+
+    # Sekundarna metrica: HTTP request rate iz Prometheusa
+    # Cilj: 10 req/s na pod → pri 30 rps = 3 podi, pri 60 rps = 6 podov
+    - type: Pods
+      pods:
+        metric:
+          name: http_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "10"
+
   behavior:
     scaleDown:
       stabilizationWindowSeconds: 180

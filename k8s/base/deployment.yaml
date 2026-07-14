@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: sushi-api
-          image: ghcr.io/your-org/devops-sushi-api:latest
+          image: sushi-api:local
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

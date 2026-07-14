@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: load-generator
-          image: ghcr.io/your-org/devops-sushi-load:latest
+          image: sushi-load:local
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

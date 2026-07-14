@@ -137,3 +137,4 @@ V Kubernetesu generator namesto lokalnega URL-ja uporablja:
 ```text
 http://sushi-api.sushi.svc.cluster.local
 ```
+

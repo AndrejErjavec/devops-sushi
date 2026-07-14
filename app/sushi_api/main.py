@@ -1,3 +1,4 @@
+import os
 import random
 import time
 
@@ -6,6 +7,8 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_
 from starlette.responses import Response
 
 app = FastAPI()
+
+CPU_WORK_MS = int(os.getenv("CPU_WORK_MS", "0"))
 
 # requesti, števec obiskovalcev oziroma requestov
 # ime matrike je http_requests_total
@@ -62,11 +65,19 @@ def metrics():
 
 # /random api..
 
+@app.get("/healthz", include_in_schema=False)
+def healthz():
+    return {"status": "ok"}
+
+
 @app.get("/random")
 def get_random_number():
-    return {
-    "message": f"Danes sem pojedel samo {random.randint(1, 100)} pic"
-}
+    if CPU_WORK_MS > 0:
+        deadline = time.perf_counter() + CPU_WORK_MS / 1000
+        while time.perf_counter() < deadline:
+            pass
+    return {"message": f"Danes sem pojedel samo {random.randint(1, 100)} pic"}
+
 
 @app.get("/")
 def home_page():
