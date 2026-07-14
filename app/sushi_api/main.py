@@ -64,8 +64,9 @@ def metrics():
 
 @app.get("/random")
 def get_random_number():
-    return {"random_number": random.randint(1, 100)}
-
+    return {
+    "message": f"Danes sem pojedel samo {random.randint(1, 100)} pic"
+}
 
 @app.get("/")
 def home_page():

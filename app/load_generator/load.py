@@ -10,6 +10,13 @@ import httpx
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, model_validator
 
+# to je generator prometa oziroma obremenitve
+# na fast api imamo na portu 8080 ki posilja veliko get zahtev 
+# na /random end nasega sushiha
+#  S POST /start zaženeš test. -> posiljajo se zahteve na {url}/random 
+# hitrost se spreminja z min_rps in max_rps
+
+
 
 # ── state ────────────────────────────────────────────────────────────────────
 
@@ -106,6 +113,7 @@ def current_rps(cfg: LoadConfig, elapsed: float) -> float:
 # ── load engine ───────────────────────────────────────────────────────────────
 
 async def send_request(client: httpx.AsyncClient, cfg: LoadConfig) -> bool:
+    # tukej se poslje request na main.py
     try:
         response = await client.get(
             f"{cfg.url.rstrip('/')}/random",
