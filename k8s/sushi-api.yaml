@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: sushi-api
-          image: ghcr.io/andrejErjavec/sushi-api:latest
+          image: ghcr.io/andrejerjavec/sushi-api:latest
           ports:
             - containerPort: 8000
           env:

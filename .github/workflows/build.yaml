@@ -9,8 +9,8 @@ on:
     # - app/load_generator/**
 
 env:
-  IMAGE_API: ghcr.io/${{ github.repository_owner }}/sushi-api
-  IMAGE_LOAD: ghcr.io/${{ github.repository_owner }}/sushi-load-generator
+  IMAGE_API: ghcr.io/${{ github.repository_owner | lower }}/sushi-api
+  IMAGE_LOAD: ghcr.io/${{ github.repository_owner | lower }}/sushi-load-generator
 
 jobs:
   build:
