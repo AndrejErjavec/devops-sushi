@@ -9,9 +9,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "devops-sushi-tfstate"
-    key = "school/terraform.tfstate"
-    region = "eu-west-1"
+    bucket       = "devops-sushi-tfstate"
+    key          = "school/terraform.tfstate"
+    region       = "eu-west-1"
     use_lockfile = true
   }
 }
