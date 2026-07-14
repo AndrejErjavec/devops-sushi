@@ -16,8 +16,8 @@ spec:
         app.kubernetes.io/name: sushi-load-generator
     spec:
       containers:
-        - name: load-generator
-          image: ghcr.io/your-org/devops-sushi-load:latest
+        - name: sushi-load-generator
+          image: ghcr.io/andrejerjavec/sushi-load-generator:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -53,6 +53,7 @@ metadata:
   labels:
     app.kubernetes.io/name: sushi-load-generator
 spec:
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: sushi-load-generator
   ports:

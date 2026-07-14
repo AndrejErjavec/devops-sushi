@@ -2,7 +2,7 @@ APP_IMAGE ?= ghcr.io/your-org/devops-sushi-api:latest
 LOAD_IMAGE ?= ghcr.io/your-org/devops-sushi-load:latest
 KUBECTL ?= kubectl
 
-.PHONY: build-api build-load deploy deploy-load delete-load hpa-watch pods-watch port-forward-api port-forward-load
+.PHONY: build-api build-load deploy deploy-local deploy-load delete-load hpa-watch pods-watch port-forward-api port-forward-load
 
 build-api:
 	docker build -t $(APP_IMAGE) app/sushi_api
@@ -11,10 +11,13 @@ build-load:
 	docker build -t $(LOAD_IMAGE) app/load_generator
 
 deploy:
-	$(KUBECTL) apply -k k8s/base
+	$(KUBECTL) apply -k k8s
+
+deploy-local:
+	$(KUBECTL) apply -k deploy/local
 
 deploy-load:
-	$(KUBECTL) apply -f k8s/base/load-deployment.yaml
+	$(KUBECTL) apply -f k8s/load-generator.yaml
 
 delete-load:
 	$(KUBECTL) -n sushi delete deployment sushi-load-generator --ignore-not-found

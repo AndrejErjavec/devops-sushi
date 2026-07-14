@@ -271,7 +271,7 @@ Ta korak ponovi vsakič, ko spremeniš Python kodo in ponovno zgradiš image.
 ### 4. Deployaj aplikaciji
 
 ```bash
-kubectl apply -k k8s/overlays/local
+kubectl apply -k deploy/local
 ```
 
 Preveri pode, Service in HPA:
@@ -464,7 +464,7 @@ V `kubectl get hpa -n sushi -w` mora CPU med večjo obremenitvijo narasti. Ko pr
 ```bash
 docker desktop start
 kubectl get nodes
-kubectl apply -k k8s/overlays/local
+kubectl apply -k deploy/local
 kubectl apply -k k8s/observability
 ```
 
@@ -509,7 +509,7 @@ kubectl get pods -n monitoring
 Če Sushi aplikacije manjkajo:
 
 ```bash
-kubectl apply -k k8s/overlays/local
+kubectl apply -k deploy/local
 ```
 
 Če monitoring viri manjkajo:
