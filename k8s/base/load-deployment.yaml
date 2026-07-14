@@ -3,25 +3,28 @@ kind: Deployment
 metadata:
   name: sushi-load-generator
   namespace: sushi
+  labels:
+    app.kubernetes.io/name: sushi-load-generator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sushi-load-generator
+      app.kubernetes.io/name: sushi-load-generator
   template:
     metadata:
       labels:
-        app: sushi-load-generator
+        app.kubernetes.io/name: sushi-load-generator
     spec:
       containers:
         - name: load-generator
           image: ghcr.io/your-org/devops-sushi-load:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
           env:
             - name: TARGET_URL
-              value: http://sushi-api.sushi.svc.cluster.local
+              value: "http://sushi-api.sushi.svc.cluster.local"
           resources:
             requests:
               cpu: 100m
@@ -32,18 +35,27 @@ spec:
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: http
             initialDelaySeconds: 3
             periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: sushi-load-generator
   namespace: sushi
+  labels:
+    app.kubernetes.io/name: sushi-load-generator
 spec:
   selector:
-    app: sushi-load-generator
+    app.kubernetes.io/name: sushi-load-generator
   ports:
-    - port: 8080
-      targetPort: 8080
+    - name: http
+      port: 8080
+      targetPort: http

@@ -3,6 +3,10 @@ grafana:
   adminPassword: sushi-admin
   service:
     type: LoadBalancer
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
 
 prometheus:
   prometheusSpec:

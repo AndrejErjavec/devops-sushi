@@ -3,3 +3,13 @@ kind: Kustomization
 resources:
   - servicemonitor.yaml
   - sushi-alerts.yaml
+
+configMapGenerator:
+  - name: sushi-grafana-dashboard
+    namespace: monitoring
+    files:
+      - grafana-dashboard-sushi.json
+    options:
+      disableNameSuffixHash: true
+      labels:
+        grafana_dashboard: "1"
