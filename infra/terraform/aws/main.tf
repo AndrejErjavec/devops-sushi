@@ -1,14 +1,14 @@
 # VPC
 resource "aws_vpc" "school" {
   cidr_block = "10.0.0.0/16"
-  tags = { Team = var.team, Name = "${var.team}-vpc" }
+  tags       = { Team = var.team, Name = "${var.team}-vpc" }
 }
 
 # Public subnet A — hosts internet-facing resources and the NAT gateway
 # the next (B) would be 10.0.2.0/24
 resource "aws_subnet" "public_a" {
-  vpc_id = aws_vpc.school.id
-  cidr_block = "10.0.1.0/24"
+  vpc_id            = aws_vpc.school.id
+  cidr_block        = "10.0.1.0/24"
   availability_zone = "eu-west-1a"
   tags = {
     Name = "${var.team}-public-subnet"
@@ -18,9 +18,9 @@ resource "aws_subnet" "public_a" {
 # Private subnet A — hosts internal resources with no direct internet access
 # the next (B) would be 10.0.102.0/24
 resource "aws_subnet" "private_a" {
-  vpc_id = aws_vpc.school.id
-  cidr_block = "10.0.101.0/24"
-  availability_zone = "eu-west-1a"
+  vpc_id                  = aws_vpc.school.id
+  cidr_block              = "10.0.101.0/24"
+  availability_zone       = "eu-west-1a"
   map_public_ip_on_launch = false
   tags = {
     Name = "${var.team}-private-subnet"
@@ -30,7 +30,7 @@ resource "aws_subnet" "private_a" {
 # Internet Gateway — connects the VPC to the public internet
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.school.id
-  tags = { Name = "${var.team}-igw" }
+  tags   = { Name = "${var.team}-igw" }
 }
 
 # Elastic IP — static public IP address for the NAT gateway
@@ -42,7 +42,7 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public_a.id
-  tags = { Name = "${var.team}-nat" }
+  tags          = { Name = "${var.team}-nat" }
 }
 
 # Public route table — routes outbound traffic to the internet via the IGW
@@ -82,7 +82,7 @@ resource "aws_route_table_association" "private_a" {
 }
 
 variable "team" {
-  type = string
+  type    = string
   default = "sushiops"
 }
 
