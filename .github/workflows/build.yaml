@@ -9,8 +9,8 @@ on:
     # - app/load_generator/**
 
 env:
-  IMAGE_API: ghcr.io/sushiops/api
-  IMAGE_LOAD: ghcr.io/sushiops/load-generator
+  IMAGE_API: ghcr.io/andrejerjavec/sushi-api
+  IMAGE_LOAD: ghcr.io/andrejerjavec/sushi-load-generator
 
 jobs:
   build:
