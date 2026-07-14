@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sushi-api
+  namespace: sushi
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sushi-api
+  template:
+    metadata:
+      labels:
+        app: sushi-api
+    spec:
+      containers:
+        - name: sushi-api
+          image: ghcr.io/andrejErjavec/sushi-api:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PORT
+              value: "8000"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sushi-api
+  namespace: sushi
+spec:
+  selector:
+    app: sushi-api
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP

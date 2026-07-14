@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sushi-load-generator
+  namespace: sushi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sushi-load-generator
+  template:
+    metadata:
+      labels:
+        app: sushi-load-generator
+    spec:
+      containers:
+        - name: sushi-load-generator
+          image: ghcr.io/andrejErjavec/sushi-load-generator:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: TARGET_URL
+              value: "http://sushi-api.sushi.svc.cluster.local"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sushi-load-generator
+  namespace: sushi
+spec:
+  selector:
+    app: sushi-load-generator
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP

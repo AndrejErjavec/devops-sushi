@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - app/sushi_api/**
-      - app/load_generator/**
+    # paths:
+    # - app/sushi_api/**
+    # - app/load_generator/**
 
 env:
   IMAGE_API: ghcr.io/${{ github.repository_owner }}/sushi-api
