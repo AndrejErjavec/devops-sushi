@@ -1,67 +1,91 @@
-import os
 import random
 import time
-from typing import Literal
 
-from fastapi import FastAPI
-from pydantic import BaseModel, Field
-from prometheus_client import Counter, Histogram, make_asgi_app
+from fastapi import FastAPI, Request
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from starlette.responses import Response
 
+app = FastAPI()
 
-MENU = ("sake", "maguro", "ebi", "avocado", "dragon-roll", "omakase")
-CPU_WORK_MS = int(os.getenv("CPU_WORK_MS", "35"))
-
-orders_total = Counter(
-    "sushi_orders_total",
-    "Total sushi orders received",
-    ["item", "status"],
-)
-order_latency = Histogram(
-    "sushi_order_latency_seconds",
-    "Latency for sushi order endpoint",
-    ["item"],
+# requesti, števec obiskovalcev oziroma requestov
+# ime matrike je http_requests_total
+# belezi tudi se tri dodatne stvari:
+# method = vrsto zahteve; get recimo
+# path recimo /random
+# status recimo 200
+REQUESTS = Counter(
+    "http_requests_total",
+    "Total number of HTTP requests",
+    ["method", "path", "status"],
 )
 
-app = FastAPI(title="DevOps Sushi Orders", version="0.1.0")
+# stoparica, koliko sekund potrebuje backend za odgovor
+REQUEST_DURATION = Histogram(
+    "http_request_duration_seconds",
+    "HTTP request duration in seconds",
+    ["method", "path"],
+)
+
+# middleware prestreze vsako zahtevo se preden recimo pride na random
+# middleware je koda skozi katero gre vsaka http zahteva
+# uporabnik -> middleware -> /random -> middleware -> odgovor uporabniku
+# to kodo se mal nastudirat
+@app.middleware("http")
+async def collect_metrics(request: Request, call_next):
+    # ce je /metrices bi se zahteva poslala samo naprej brez merjenja
+    if request.url.path == "/metrics":
+        return await call_next(request)
+    
+    # zazenemo stoparico
+    started_at = time.perf_counter()
+    status_code = 500
+
+    try:
+        # izvedemo pravi end point
+        response = await call_next(request)
+        status_code = response.status_code
+        return response
+    finally:
+        route = request.scope.get("route")
+        path = getattr(route, "path", "unmatched")
+        method = request.method
+
+        REQUESTS.labels(method=method, path=path, status=status_code).inc()
+        REQUEST_DURATION.labels(method=method, path=path).observe(
+            time.perf_counter() - started_at
+        )
 
 
-class SushiOrder(BaseModel):
-    item: Literal["sake", "maguro", "ebi", "avocado", "dragon-roll", "omakase"] = "sake"
-    quantity: int = Field(default=1, ge=1, le=20)
+@app.get("/metrics", include_in_schema=False)
+def metrics():
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
+# /random api..
 
-def burn_cpu(milliseconds: int) -> None:
-    deadline = time.perf_counter() + (milliseconds / 1000)
-    value = random.random()
-    while time.perf_counter() < deadline:
-        value = (value * 1.000001) % 1.0
-
-
-@app.get("/healthz")
-def healthz() -> dict[str, str]:
-    return {"status": "ok"}
-
-
-@app.get("/menu")
-def menu() -> dict[str, tuple[str, ...]]:
-    return {"items": MENU}
-
-
-@app.post("/order")
-def create_order(order: SushiOrder) -> dict[str, str | int]:
-    start = time.perf_counter()
-    burn_cpu(CPU_WORK_MS * order.quantity)
-    elapsed = time.perf_counter() - start
-
-    orders_total.labels(item=order.item, status="accepted").inc(order.quantity)
-    order_latency.labels(item=order.item).observe(elapsed)
-
+@app.get("/random")
+def get_random_number():
     return {
-        "status": "accepted",
-        "item": order.item,
-        "quantity": order.quantity,
-        "chef": os.getenv("HOSTNAME", "local"),
-    }
+    "message": f"Danes sem pojedel samo {random.randint(1, 100)} pic"
+}
+
+@app.get("/")
+def home_page():
+    return "home page"
 
 
-app.mount("/metrics", make_asgi_app())
+"""
+GET /random
+    ↓
+Zapomni začetni čas
+    ↓
+Izvedi get_random_number()
+    ↓
+Pridobi odgovor 200
+    ↓
+Povečaj števec za 1
+    ↓
+Izračunaj trajanje
+    ↓
+Vrni odgovor uporabniku
+
+"""

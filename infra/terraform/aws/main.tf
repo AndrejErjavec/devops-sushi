@@ -6,7 +6,7 @@ variable "team" {
 # VPC
 resource "aws_vpc" "school" {
   cidr_block = "10.0.0.0/16"
-  tags = { Team = var.team, Name = "${var.team}-vpc" }
+  tags       = { Team = var.team, Name = "${var.team}-vpc" }
 }
 
 # Public subnet A — AZ a
