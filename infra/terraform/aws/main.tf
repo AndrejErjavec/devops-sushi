@@ -1,133 +1,112 @@
-# AWS provider uporablja regijo, nastavljeno v variables.tf.
-provider "aws" {
-  region = var.aws_region
+# VPC
+resource "aws_vpc" "school" {
+  cidr_block = "10.0.0.0/16"
+  tags       = { Team = var.team, Name = "${var.team}-vpc" }
 }
 
-# Poišče najnovejšo uradno Ubuntu 22.04 (Jammy) AMI sliko.
-data "aws_ami" "ubuntu" {
+# Public subnet A — hosts internet-facing resources and the NAT gateway
+# the next (B) would be 10.0.2.0/24
+resource "aws_subnet" "public_a" {
+  vpc_id            = aws_vpc.school.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "eu-west-1a"
+  tags = {
+    Name = "${var.team}-public-subnet"
+  }
+}
+
+# Private subnet A — hosts internal resources with no direct internet access
+# the next (B) would be 10.0.102.0/24
+resource "aws_subnet" "private_a" {
+  vpc_id                  = aws_vpc.school.id
+  cidr_block              = "10.0.101.0/24"
+  availability_zone       = "eu-west-1a"
+  map_public_ip_on_launch = false
+  tags = {
+    Name = "${var.team}-private-subnet"
+  }
+}
+
+# Internet Gateway — connects the VPC to the public internet
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.school.id
+  tags   = { Name = "${var.team}-igw" }
+}
+
+# Elastic IP — static public IP address for the NAT gateway
+resource "aws_eip" "nat" {
+  domain = "vpc"
+}
+
+# NAT Gateway — allows private subnet instances to initiate outbound internet traffic
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public_a.id
+  tags          = { Name = "${var.team}-nat" }
+}
+
+# Public route table — routes outbound traffic to the internet via the IGW
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.school.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = { Name = "${var.team}-public-rt" }
+}
+
+# Associate public route table with public subnet A
+resource "aws_route_table_association" "public_a" {
+  subnet_id      = aws_subnet.public_a.id
+  route_table_id = aws_route_table.public.id
+}
+
+# Private route table — routes outbound traffic to the internet via the NAT gateway
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.school.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat.id
+  }
+
+  tags = { Name = "${var.team}-private-rt" }
+}
+
+# Associate private route table with private subnet A
+resource "aws_route_table_association" "private_a" {
+  subnet_id      = aws_subnet.private_a.id
+  route_table_id = aws_route_table.private.id
+}
+
+variable "team" {
+  type    = string
+  default = "sushiops"
+}
+
+output "vpc_id" {
+  value = aws_vpc.school.id
+}
+
+# Fetch the latest Amazon Linux 2023 AMI
+data "aws_ami" "al2023" {
+  owners      = ["amazon"]
   most_recent = true
-  # ID uradnega Canonical AWS računa.
-  owners      = ["099720109477"]
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+    values = ["al2023-ami-*-x86_64"]
   }
 }
 
-# Poišče privzeti VPC v izbrani AWS regiji.
-data "aws_vpc" "default" {
-  default = true
-}
-
-# Poišče vse subnete, ki pripadajo privzetemu VPC-ju.
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
-}
-
-# Registrira lokalni javni SSH ključ kot AWS key pair.
-resource "aws_key_pair" "this" {
-  key_name   = "${var.cluster_name}-key"
-  # pathexpand razširi ~, file pa prebere vsebino javnega ključa.
-  public_key = file(pathexpand(var.public_key_path))
-}
-
-# Firewall pravila za dostop do RKE/Kubernetes nodov.
-resource "aws_security_group" "rke" {
-  name        = "${var.cluster_name}-rke"
-  description = "RKE demo cluster access"
-  vpc_id      = data.aws_vpc.default.id
-
-  # SSH je dovoljen samo iz CIDR-ja, podanega v allowed_ssh_cidr.
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
-  }
-
-  # Kubernetes API uporablja TCP vrata 6443.
-  ingress {
-    description = "Kubernetes API"
-    from_port   = 6443
-    to_port     = 6443
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
-  }
-
-  # Dovoli ves promet med instancami z isto security group.
-  ingress {
-    description = "RKE internal traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    self        = true
-  }
-
-  # Dovoli instancam ves odhodni promet proti internetu.
-  egress {
-    description = "Outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+# EC2 instance — runner deployed inside the VPC
+resource "aws_instance" "runner" {
+  ami           = data.aws_ami.al2023.id
+  instance_type = "t3.micro"
 
   tags = {
-    Name = "${var.cluster_name}-rke"
-  }
-}
-
-# Sestavi seznam nodov: en control node in nastavljivo število workerjev.
-locals {
-  nodes = concat(
-    # Control node ima za ta demo tudi etcd in worker vlogo.
-    [
-      {
-        name  = "control-1"
-        roles = "controlplane,etcd,worker"
-      }
-    ],
-    # Ustvari worker-1, worker-2, ... glede na worker_count.
-    [
-      for index in range(var.worker_count) : {
-        name  = "worker-${index + 1}"
-        roles = "worker"
-      }
-    ]
-  )
-}
-
-# Za vsak element v local.nodes ustvari eno EC2 instanco.
-resource "aws_instance" "node" {
-  # Ime noda postane unikaten ključ, npr. control-1 ali worker-1.
-  for_each = { for node in local.nodes : node.name => node }
-
-  ami                         = data.aws_ami.ubuntu.id
-  instance_type               = var.instance_type
-  # Za demo uporabi prvi subnet iz privzetega VPC-ja.
-  subnet_id                   = data.aws_subnets.default.ids[0]
-  associate_public_ip_address = true
-  vpc_security_group_ids      = [aws_security_group.rke.id]
-  key_name                    = aws_key_pair.this.key_name
-
-  # Sistemski EBS disk posamezne instance.
-  root_block_device {
-    volume_size = 40
-    volume_type = "gp3"
-  }
-
-  # Ob prvem zagonu instance izvede pripravljalno shell skripto.
-  user_data = templatefile("${path.module}/user-data.sh", {})
-
-  # Oznake olajšajo prepoznavanje nodov in njihovih RKE vlog v AWS konzoli.
-  tags = {
-    Name    = "${var.cluster_name}-${each.key}"
-    Cluster = var.cluster_name
-    Roles   = each.value.roles
+    Name = "${var.team}-runner"
   }
 }
