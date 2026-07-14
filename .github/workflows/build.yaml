@@ -10,7 +10,7 @@ on:
 
 env:
   IMAGE_API: ghcr.io/${{ github.repository }}-api
-  IMAGE_LOAD: ghcr.io/${{ github.repository | lower }}-load-generator
+  IMAGE_LOAD: ghcr.io/${{ github.repository }}-load-generator
 
 jobs:
   build:
