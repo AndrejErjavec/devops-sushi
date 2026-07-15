@@ -4,7 +4,7 @@ metadata:
   name: sushi-alerts
   namespace: sushi
   labels:
-    release: kube-prometheus-stack
+    release: monitoring
 spec:
   groups:
     - name: sushi.recording
@@ -12,9 +12,8 @@ spec:
       rules:
         - record: sushi:http_requests_per_second:rate1m
           expr: |
-            sum(rate(http_requests_total{
-              namespace="sushi",
-              path="/random"
+            sum(rate(sushi_api_http_request_duration_seconds_count{
+              namespace="sushi"
             }[1m]))
         - record: sushi:running_pods
           expr: |
@@ -37,16 +36,14 @@ spec:
       rules:
         - alert: SushiApiHighErrorRate
           expr: |
-            sum(rate(http_requests_total{
+            sum(rate(sushi_api_http_request_duration_seconds_count{
               namespace="sushi",
-              path="/random",
               status=~"5.."
             }[5m]))
             /
             clamp_min(
-              sum(rate(http_requests_total{
-                namespace="sushi",
-                path="/random"
+              sum(rate(sushi_api_http_request_duration_seconds_count{
+                namespace="sushi"
               }[5m])),
               0.001
             )

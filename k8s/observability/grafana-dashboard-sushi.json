@@ -46,7 +46,7 @@
       "id": 2,
       "targets": [
         {
-          "expr": "sum by (status) (rate(http_requests_total{namespace=\"sushi\", path=\"/random\"}[$__rate_interval]))",
+          "expr": "sum by (status) (rate(sushi_api_http_request_duration_seconds_count{namespace=\"sushi\"}[$__rate_interval]))",
           "legendFormat": "HTTP {{status}}",
           "refId": "A"
         }
@@ -127,7 +127,7 @@
       "id": 5,
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{namespace=\"sushi\", path=\"/random\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(sushi_api_http_request_duration_seconds_bucket{namespace=\"sushi\"}[$__rate_interval])))",
           "legendFormat": "p95",
           "refId": "A"
         }
@@ -153,7 +153,7 @@
       "id": 6,
       "targets": [
         {
-          "expr": "sum(increase(http_requests_total{namespace=\"sushi\", path=\"/random\"}[$__range]))",
+          "expr": "sum(increase(sushi_api_http_request_duration_seconds_count{namespace=\"sushi\"}[$__range]))",
           "legendFormat": "requests",
           "refId": "A"
         }
@@ -162,7 +162,7 @@
       "type": "stat"
     }
   ],
-  "refresh": "10s",
+  "refresh": "5s",
   "schemaVersion": 39,
   "tags": [
     "sushi",
@@ -170,11 +170,11 @@
     "prometheus"
   ],
   "time": {
-    "from": "now-30m",
+    "from": "now-15m",
     "to": "now"
   },
   "timezone": "browser",
   "title": "DevOps Sushi",
   "uid": "devops-sushi",
-  "version": 2
+  "version": 4
 }
