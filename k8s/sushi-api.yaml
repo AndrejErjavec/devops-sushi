@@ -6,7 +6,6 @@ metadata:
   labels:
     app.kubernetes.io/name: sushi-api
 spec:
-  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: sushi-api

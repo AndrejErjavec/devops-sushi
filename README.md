@@ -223,8 +223,7 @@ kubectl get pods -n monitoring
 
 Vsi monitoring podi morajo imeti status `Running`.
 
-### Vsak naslednji Kubernetes zagon
-
+### Vsak naslednji Kubernetes zag
 Če je bilo vse že enkrat nameščeno in kode nisi spreminjal, uporabi spodnje korake.
 
 #### Terminal 1 – zaženi cluster in preveri pode
