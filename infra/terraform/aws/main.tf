@@ -1,6 +1,12 @@
 variable "team" {
-  type = string
+  type    = string
   default = "sushiops"
+}
+
+variable "admin_principal_arn" {
+  type        = string
+  description = "IAM user or role ARN to grant EKS cluster admin access"
+  default     = "arn:aws:iam::937697200280:user/summer-school-ljubljana/andrej.erjavec"
 }
 
 # VPC
@@ -172,6 +178,24 @@ resource "aws_eks_cluster" "main" {
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy,
   ]
+}
+
+# Grant admin IAM user access to the EKS cluster
+resource "aws_eks_access_entry" "admin" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = var.admin_principal_arn
+}
+
+resource "aws_eks_access_policy_association" "admin" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = var.admin_principal_arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+
+  depends_on = [aws_eks_access_entry.admin]
 }
 
 # IAM role for EKS worker nodes

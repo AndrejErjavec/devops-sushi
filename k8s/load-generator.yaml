@@ -4,7 +4,7 @@ metadata:
   name: sushi-load-generator
   namespace: sushi
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: sushi-load-generator
@@ -17,20 +17,20 @@ spec:
         - name: sushi-load-generator
           image: ghcr.io/andrejerjavec/sushi-load-generator:latest
           ports:
-            - containerPort: 8000
+            - containerPort: 8080
           env:
             - name: TARGET_URL
               value: "http://sushi-api.sushi.svc.cluster.local"
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8000
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8000
+              port: 8080
             initialDelaySeconds: 10
             periodSeconds: 15
           resources:
@@ -51,5 +51,5 @@ spec:
     app: sushi-load-generator
   ports:
     - port: 80
-      targetPort: 8000
+      targetPort: 8080
   type: ClusterIP
