@@ -1,23 +1,14 @@
-import json
-import logging
 import os
 import random
 import time
-from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from starlette.responses import Response
 
 app = FastAPI()
-request_logger = logging.getLogger("sushi_api.requests")
-if not request_logger.handlers:
-    request_handler = logging.StreamHandler()
-    request_handler.setFormatter(logging.Formatter("%(message)s"))
-    request_logger.addHandler(request_handler)
-request_logger.setLevel(logging.INFO)
-request_logger.propagate = False
-CPU_WORK_MS = max(0, int(os.getenv("CPU_WORK_MS", "0")))
+
+CPU_WORK_MS = int(os.getenv("CPU_WORK_MS", "0"))
 
 # requesti, števec obiskovalcev oziroma requestov
 # ime matrike je http_requests_total
@@ -44,11 +35,11 @@ REQUEST_DURATION = Histogram(
 # to kodo se mal nastudirat
 @app.middleware("http")
 async def collect_metrics(request: Request, call_next):
-    # /metrics se zabeleži v log, ne pa tudi v metrike, da scrape ne povečuje RPS.
-    record_prometheus_metrics = request.url.path != "/metrics"
-
+    # ce je /metrices bi se zahteva poslala samo naprej brez merjenja
+    if request.url.path == "/metrics":
+        return await call_next(request)
+    
     # zazenemo stoparico
-    timestamp = datetime.now(timezone.utc).isoformat()
     started_at = time.perf_counter()
     status_code = 500
 
@@ -61,25 +52,10 @@ async def collect_metrics(request: Request, call_next):
         route = request.scope.get("route")
         path = getattr(route, "path", "unmatched")
         method = request.method
-        duration_seconds = time.perf_counter() - started_at
 
-        if record_prometheus_metrics:
-            REQUESTS.labels(
-                method=method,
-                path=path,
-                status=str(status_code),
-            ).inc()
-            REQUEST_DURATION.labels(method=method, path=path).observe(duration_seconds)
-        request_logger.info(
-            json.dumps(
-                {
-                    "timestamp": timestamp,
-                    "method": method,
-                    "path": path,
-                    "status_code": status_code,
-                    "duration_seconds": round(duration_seconds, 6),
-                }
-            )
+        REQUESTS.labels(method=method, path=path, status=status_code).inc()
+        REQUEST_DURATION.labels(method=method, path=path).observe(
+            time.perf_counter() - started_at
         )
 
 
@@ -87,24 +63,19 @@ async def collect_metrics(request: Request, call_next):
 def metrics():
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
+# /random api..
 
 @app.get("/healthz", include_in_schema=False)
 def healthz():
     return {"status": "ok"}
 
 
-def burn_cpu(milliseconds: int) -> None:
-    deadline = time.perf_counter() + milliseconds / 1000
-    value = random.random()
-    while time.perf_counter() < deadline:
-        value = (value * 1.000001) % 1.0
-
-
-# /random api..
-
 @app.get("/random")
 def get_random_number():
-    burn_cpu(CPU_WORK_MS)
+    if CPU_WORK_MS > 0:
+        deadline = time.perf_counter() + CPU_WORK_MS / 1000
+        while time.perf_counter() < deadline:
+            pass
     return {"message": f"Danes sem pojedel samo {random.randint(1, 100)} pic"}
 
 

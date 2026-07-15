@@ -44,7 +44,7 @@ class LoadConfig(BaseModel):
     url: str = Field(
         default_factory=lambda: os.getenv(
             "TARGET_URL",
-            "http://sushi-api.sushi.svc.cluster.local",
+            "http://127.0.0.1:8000",
         )
     )
     duration_seconds: int = Field(default=300, ge=10, le=3600)
@@ -65,7 +65,7 @@ class LoadConfig(BaseModel):
     model_config = {
         "json_schema_extra": {
             "example": {
-                "url": "http://sushi-api.sushi.svc.cluster.local",
+                "url": "http://127.0.0.1:8000",
                 "duration_seconds": 300,
                 "min_rps": 5,
                 "max_rps": 80,
