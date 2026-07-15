@@ -17,14 +17,14 @@ CPU_WORK_MS = int(os.getenv("CPU_WORK_MS", "0"))
 # path recimo /random
 # status recimo 200
 REQUESTS = Counter(
-    "http_requests_total",
+    "sushi_api_http_requests_total",
     "Total number of HTTP requests",
     ["method", "path", "status"],
 )
 
 # stoparica, koliko sekund potrebuje backend za odgovor
 REQUEST_DURATION = Histogram(
-    "http_request_duration_seconds",
+    "sushi_api_http_request_duration_seconds",
     "HTTP request duration in seconds",
     ["method", "path"],
 )
