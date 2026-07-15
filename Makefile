@@ -1,15 +1,19 @@
 APP_IMAGE ?= ghcr.io/your-org/devops-sushi-api:latest
 LOAD_IMAGE ?= ghcr.io/your-org/devops-sushi-load:latest
+FRONTEND_IMAGE ?= ghcr.io/your-org/devops-sushi-frontend:latest
 KUBECTL ?= kubectl
 HELM ?= helm
 
-.PHONY: build-api build-load deploy deploy-load delete-load hpa-watch pods-watch port-forward-api deploy-adapter
+.PHONY: build-api build-load build-frontend deploy deploy-load delete-load hpa-watch pods-watch port-forward-api port-forward-frontend deploy-adapter
 
 build-api:
 	docker build -t $(APP_IMAGE) app/sushi_api
 
 build-load:
 	docker build -t $(LOAD_IMAGE) app/load_generator
+
+build-frontend:
+	docker build -t $(FRONTEND_IMAGE) app/frontend
 
 deploy:
 	$(KUBECTL) apply -k k8s/base
@@ -29,6 +33,9 @@ pods-watch:
 
 port-forward-api:
 	$(KUBECTL) -n sushi port-forward svc/sushi-api 8000:80
+
+port-forward-frontend:
+	$(KUBECTL) -n sushi port-forward svc/sushi-frontend 5173:80
 
 deploy-adapter:
 	$(HELM) repo add prometheus-community https://prometheus-community.github.io/helm-charts

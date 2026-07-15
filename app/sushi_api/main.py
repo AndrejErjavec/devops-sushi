@@ -11,7 +11,7 @@ app = FastAPI()
 CPU_WORK_MS = int(os.getenv("CPU_WORK_MS", "0"))
 
 # requesti, števec obiskovalcev oziroma requestov
-# ime matrike je http_requests_total
+# ime metrike je sushi_api_http_requests_total
 # belezi tudi se tri dodatne stvari:
 # method = vrsto zahteve; get recimo
 # path recimo /random

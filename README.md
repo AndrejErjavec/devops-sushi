@@ -1,9 +1,9 @@
 # DevOps Sushi
 
-Projekt ima FastAPI backend in generator obremenitve:
+Projekt ima FastAPI backend, generator obremenitve in Vue frontend:
 
 ```text
-Load Generator → GET /random → Sushi API
+Vue frontend → Load Generator → GET /random → Sushi API
 ```
 
 Zaženeš ga lahko na dva načina:
@@ -73,7 +73,25 @@ Generator je na:
 http://127.0.0.1:8080
 ```
 
-### Terminal 3 – začetek testa
+### Terminal 3 – Vue frontend
+
+Prva namestitev in zagon:
+
+```bash
+cd app/frontend
+npm install
+npm run dev
+```
+
+Odpri:
+
+```text
+http://127.0.0.1:5173
+```
+
+Test zaženeš in ustaviš z gumbom na strani. Gumb **Odpri Grafano** je namenjen Kubernetes načinu.
+
+### Ročni test brez frontenda
 
 ```bash
 curl -X POST http://127.0.0.1:8080/start \
@@ -98,7 +116,7 @@ curl http://127.0.0.1:8080/status
 Prometheus metrike backenda:
 
 ```bash
-curl -s http://127.0.0.1:8000/metrics | grep http_requests_total
+curl -s http://127.0.0.1:8000/metrics | grep sushi_api_http_requests_total
 ```
 
 Predčasna ustavitev:
@@ -112,7 +130,7 @@ Swagger:
 - backend: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 - load generator: [http://127.0.0.1:8080/docs](http://127.0.0.1:8080/docs)
 
-Terminala 1 in 2 morata med testom ostati odprta. Lokalni način ne prikazuje podatkov v Kubernetes Grafani.
+Vsi trije terminali morajo med testom ostati odprti. Lokalni način ne prikazuje podatkov v Kubernetes Grafani.
 
 ---
 
@@ -145,19 +163,20 @@ kubectl get nodes
 
 Node mora imeti status `Ready`.
 
-#### 2. Zgradi lokalna imagea
+#### 2. Zgradi lokalne image
 
 Iz korena projekta:
 
 ```bash
 docker build -t devops-sushi-api:local app/sushi_api
 docker build -t devops-sushi-load:local app/load_generator
+docker build -t devops-sushi-frontend:local app/frontend
 ```
 
 Uvozi ju v Docker Desktop Kubernetes node:
 
 ```bash
-docker image save devops-sushi-api:local devops-sushi-load:local \
+docker image save devops-sushi-api:local devops-sushi-load:local devops-sushi-frontend:local \
   | docker exec -i desktop-control-plane \
     ctr --namespace=k8s.io images import -
 ```
@@ -174,7 +193,7 @@ Preverjanje:
 kubectl get pods,services,hpa -n sushi
 ```
 
-Pričakujemo dva `sushi-api` poda in en `sushi-load-generator` pod s statusom `Running`.
+Pričakujemo dva `sushi-api` poda, load generator in frontend s statusom `Running`.
 
 #### 3. Namesti metrics-server
 
@@ -264,16 +283,24 @@ geslo: sushi-admin
 
 Terminal pusti odprt.
 
-#### Terminal 3 – odpri load generator
+#### Terminal 3 – odpri frontend
 
 ```bash
 kubectl -n sushi port-forward \
-  service/sushi-load-generator 8080:8080
+  service/sushi-frontend 5173:80
 ```
 
-Terminal pusti odprt.
+Odpri `http://127.0.0.1:5173`. Na strani zaženeš ali ustaviš requeste in odpreš Grafano. Terminal pusti odprt.
 
-#### Terminal 4 – začni pošiljati requeste
+#### Ročni začetek brez frontenda
+
+Če želiš namesto gumba uporabiti `curl`, najprej odpri load generator:
+
+```bash
+kubectl -n sushi port-forward service/sushi-load-generator 8080:80
+```
+
+Nato v drugem terminalu:
 
 ```bash
 curl -X POST http://127.0.0.1:8080/start \
@@ -316,7 +343,8 @@ Ponovno zgradi in uvozi imagea:
 ```bash
 docker build -t devops-sushi-api:local app/sushi_api
 docker build -t devops-sushi-load:local app/load_generator
-docker image save devops-sushi-api:local devops-sushi-load:local \
+docker build -t devops-sushi-frontend:local app/frontend
+docker image save devops-sushi-api:local devops-sushi-load:local devops-sushi-frontend:local \
   | docker exec -i desktop-control-plane \
     ctr --namespace=k8s.io images import -
 ```
@@ -325,9 +353,77 @@ Ponovno zaženi pod deploymenta:
 
 ```bash
 kubectl -n sushi rollout restart \
-  deployment/sushi-api deployment/sushi-load-generator
+  deployment/sushi-api deployment/sushi-load-generator deployment/sushi-frontend
 kubectl -n sushi rollout status deployment/sushi-api
 kubectl -n sushi rollout status deployment/sushi-load-generator
+kubectl -n sushi rollout status deployment/sushi-frontend
 ```
 
 Port-forward terminale ustaviš s `Ctrl+C`.
+
+---
+
+## Hiter ponovni zagon celotnega sistema!!
+
+Najprej zaženi Docker Desktop in počakaj, da je Kubernetes cluster pripravljen. Nato odpri tri terminale. Če je že, je kul!
+
+### Terminal 1 – Kubernetes aplikacije
+
+```bash
+cd /Users/zanstankovic/Downloads/devops-sushi
+kubectl get nodes
+kubectl apply -k deploy/local
+kubectl apply -k k8s/observability
+kubectl get pods -n sushi
+kubectl get pods -n monitoring
+```
+
+Počakaj, da imajo podi status `Running`. Ta terminal lahko nato uporabiš za spremljanje podov:
+
+```bash
+kubectl get pods -n sushi -w
+```
+
+### Terminal 2 – frontend
+
+```bash
+cd /Users/zanstankovic/Downloads/devops-sushi
+kubectl -n sushi port-forward service/sushi-frontend 5173:80
+```
+
+Terminal pusti odprt.
+
+### Terminal 3 – Grafana
+
+```bash
+cd /Users/zanstankovic/Downloads/devops-sushi
+kubectl -n monitoring port-forward \
+  service/kube-prometheus-stack-grafana 3000:80
+```
+
+Tudi ta terminal pusti odprt.
+
+### Uporaba
+
+Frontend odpri na:
+
+```text
+http://127.0.0.1:5173
+```
+
+Na strani nastavi obremenitev in klikni **Začni spam**. Z istim gumbom lahko pošiljanje requestov ustaviš. Gumb **Odpri Grafano** odpre dashboard z metrikami.
+
+Grafano lahko odpreš tudi neposredno:
+
+```text
+http://127.0.0.1:3000/d/devops-sushi/devops-sushi
+```
+
+Prijava v Grafano:
+
+```text
+uporabnik: admin
+geslo: sushi-admin
+```
+
+Load generatorja ni treba posebej zagnati ali port-forwardati, ker že deluje kot Kubernetes pod. Port-forward terminale ustaviš s `Ctrl+C`.

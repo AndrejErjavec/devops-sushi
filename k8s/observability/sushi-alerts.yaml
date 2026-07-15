@@ -8,14 +8,14 @@ metadata:
 spec:
   groups:
     - name: sushi.recording
-      interval: 15s
+      interval: 5s
       rules:
-        - record: sushi:http_requests_per_second:rate1m
+        - record: sushi:http_requests_per_second:rate30s
           expr: |
-            sum(rate(http_requests_total{
+            sum(rate(sushi_api_http_requests_total{
               namespace="sushi",
               path="/random"
-            }[1m]))
+            }[30s]))
         - record: sushi:running_pods
           expr: |
             count(kube_pod_status_phase{
@@ -23,7 +23,7 @@ spec:
               pod=~"sushi-api-.*",
               phase="Running"
             } == 1)
-        - record: sushi:pod_cpu_millicores:rate1m
+        - record: sushi:pod_cpu_millicores:rate30s
           expr: |
             1000 * sum by (pod) (
               rate(container_cpu_usage_seconds_total{
@@ -31,20 +31,20 @@ spec:
                 pod=~"sushi-api-.*",
                 container="sushi-api",
                 image!=""
-              }[1m])
+              }[30s])
             )
     - name: sushi.rules
       rules:
         - alert: SushiApiHighErrorRate
           expr: |
-            sum(rate(http_requests_total{
+            sum(rate(sushi_api_http_requests_total{
               namespace="sushi",
               path="/random",
               status=~"5.."
             }[5m]))
             /
             clamp_min(
-              sum(rate(http_requests_total{
+              sum(rate(sushi_api_http_requests_total{
                 namespace="sushi",
                 path="/random"
               }[5m])),
