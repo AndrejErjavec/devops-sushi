@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - servicemonitor.yaml
   - sushi-alerts.yaml
+  - prometheus-lb.yaml
 
 configMapGenerator:
   - name: sushi-grafana-dashboard

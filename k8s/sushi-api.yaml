@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
         - name: sushi-api
-          image: sushi-api:local
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/andrejerjavec/sushi-api:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8000
@@ -44,3 +44,22 @@ spec:
             limits:
               cpu: 500m
               memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sushi-api
+  namespace: sushi
+  labels:
+    app.kubernetes.io/name: sushi-api
+spec:
+  selector:
+    app.kubernetes.io/name: sushi-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: metrics
+      port: 8000
+      targetPort: http
+  type: ClusterIP
