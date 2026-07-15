@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lsb_release -a)",
+      "Bash(dpkg -l docker.io docker-ce)",
+      "Bash(kubectl get *)",
+      "Bash(helm repo *)",
+      "Bash(make deploy-adapter *)"
+    ]
+  }
+}

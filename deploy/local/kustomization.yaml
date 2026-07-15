@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../k8s
+
+images:
+  - name: ghcr.io/andrejerjavec/sushi-api
+    newName: devops-sushi-api
+    newTag: local
+  - name: ghcr.io/andrejerjavec/sushi-load-generator
+    newName: devops-sushi-load
+    newTag: local

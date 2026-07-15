@@ -27,6 +27,7 @@ Load generator podpira načine `sine`, `sawtooth`, `random` in `step`. Hitrost s
 | --- | --- | --- |
 | `GET` | `/` | Osnovni odgovor |
 | `GET` | `/random` | Naključno število v sporočilu |
+| `GET` | `/healthz` | Kubernetes health check |
 | `GET` | `/metrics` | Prometheus metrike |
 | `GET` | `/docs` | Swagger |
 
@@ -126,6 +127,8 @@ curl -s http://127.0.0.1:8000/metrics | grep http_requests_total
 ```
 
 Test deluje pravilno, ko `sent` in `ok` naraščata, `failed` ostane `0`, backend pa izpisuje zahteve `GET /random ... 200 OK`.
+
+Vsak backend request se zapiše tudi kot JSON log s timestampom, response kodo in trajanjem. Prometheus iz števca izračuna RPS, Grafana pa prikazuje RPS, število podov in CPU porabo vsakega poda.
 
 ## Povezave
 

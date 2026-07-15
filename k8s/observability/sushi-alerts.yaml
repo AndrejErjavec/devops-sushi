@@ -1,0 +1,69 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sushi-alerts
+  namespace: sushi
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: sushi.recording
+      interval: 15s
+      rules:
+        - record: sushi:http_requests_per_second:rate1m
+          expr: |
+            sum(rate(http_requests_total{
+              namespace="sushi",
+              path="/random"
+            }[1m]))
+        - record: sushi:running_pods
+          expr: |
+            count(kube_pod_status_phase{
+              namespace="sushi",
+              pod=~"sushi-api-.*",
+              phase="Running"
+            } == 1)
+        - record: sushi:pod_cpu_millicores:rate1m
+          expr: |
+            1000 * sum by (pod) (
+              rate(container_cpu_usage_seconds_total{
+                namespace="sushi",
+                pod=~"sushi-api-.*",
+                container="sushi-api",
+                image!=""
+              }[1m])
+            )
+    - name: sushi.rules
+      rules:
+        - alert: SushiApiHighErrorRate
+          expr: |
+            sum(rate(http_requests_total{
+              namespace="sushi",
+              path="/random",
+              status=~"5.."
+            }[5m]))
+            /
+            clamp_min(
+              sum(rate(http_requests_total{
+                namespace="sushi",
+                path="/random"
+              }[5m])),
+              0.001
+            )
+            > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Sushi API has more than 5% HTTP 5xx responses"
+        - alert: SushiApiScaledNearMax
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas{
+              namespace="sushi",
+              horizontalpodautoscaler="sushi-api"
+            } >= 10
+          for: 10m
+          labels:
+            severity: info
+          annotations:
+            summary: "Sushi API is scaled close to HPA maximum"
