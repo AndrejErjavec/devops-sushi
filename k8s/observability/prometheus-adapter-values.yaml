@@ -6,7 +6,7 @@ rules:
   custom:
     # Pretvori http_requests_total v metrico "http_requests_per_second"
     # HPA jo bere kot: koliko requestov/s gre na vsak pod
-    - seriesQuery: 'http_requests_total{namespace!="",pod!=""}'
+    - seriesQuery: 'sushi_api_http_requests_total{namespace!="",pod!=""}'
       resources:
         overrides:
           namespace:
@@ -14,7 +14,7 @@ rules:
           pod:
             resource: pod
       name:
-        matches: "^http_requests_total$"
+        matches: "^sushi_api_http_requests_total$"
         as: "http_requests_per_second"
       metricsQuery: |
-        sum(rate(http_requests_total{<<.LabelMatchers>>,path!="/healthz",path!="/metrics"}[2m])) by (<<.GroupBy>>)
+        sum(rate(sushi_api_http_requests_total{<<.LabelMatchers>>,path!="/healthz",path!="/metrics"}[2m])) by (<<.GroupBy>>)

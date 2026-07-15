@@ -5,3 +5,5 @@ resources:
   - namespace.yaml
   - sushi-api.yaml
   - load-generator.yaml
+  - hpa.yaml
+  - frontend.yaml

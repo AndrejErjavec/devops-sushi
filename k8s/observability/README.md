@@ -91,7 +91,7 @@ Dashboard prikazuje:
 Prometheus vsakih 15 sekund izračuna tudi recording rules:
 
 ```text
-sushi:http_requests_per_second:rate1m
+sushi:http_requests_per_second:rate30s
 sushi:running_pods
-sushi:pod_cpu_millicores:rate1m
+sushi:pod_cpu_millicores:rate30s
 ```

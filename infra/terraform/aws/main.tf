@@ -3,10 +3,13 @@ variable "team" {
   default = "sushiops"
 }
 
-variable "admin_principal_arn" {
-  type        = string
-  description = "IAM user or role ARN to grant EKS cluster admin access"
-  default     = "arn:aws:iam::937697200280:user/summer-school-ljubljana/andrej.erjavec"
+variable "admin_principal_arns" {
+  type        = list(string)
+  description = "IAM user or role ARNs to grant EKS cluster admin access"
+  default = [
+    "arn:aws:iam::937697200280:user/summer-school-ljubljana/andrej.erjavec",
+    "arn:aws:iam::937697200280:user/summer-school-ljubljana/nina.baskarad",
+  ]
 }
 
 # VPC
@@ -170,15 +173,17 @@ resource "aws_eks_cluster" "main" {
   ]
 }
 
-# Grant admin IAM user access to the EKS cluster
+# Grant admin IAM users access to the EKS cluster
 resource "aws_eks_access_entry" "admin" {
+  for_each      = toset(var.admin_principal_arns)
   cluster_name  = aws_eks_cluster.main.name
-  principal_arn = var.admin_principal_arn
+  principal_arn = each.value
 }
 
 resource "aws_eks_access_policy_association" "admin" {
+  for_each      = toset(var.admin_principal_arns)
   cluster_name  = aws_eks_cluster.main.name
-  principal_arn = var.admin_principal_arn
+  principal_arn = each.value
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {

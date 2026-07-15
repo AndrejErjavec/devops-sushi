@@ -12,3 +12,7 @@ __pycache__/
 .venv/
 __pycache__/
 *.pyc
+
+# Vue / Vite
+node_modules/
+dist/

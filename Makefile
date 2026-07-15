@@ -1,5 +1,6 @@
 APP_IMAGE ?= ghcr.io/your-org/devops-sushi-api:latest
 LOAD_IMAGE ?= ghcr.io/your-org/devops-sushi-load:latest
+FRONTEND_IMAGE ?= ghcr.io/your-org/devops-sushi-frontend:latest
 KUBECTL ?= kubectl
 HELM ?= helm
 
@@ -10,6 +11,9 @@ build-api:
 
 build-load:
 	docker build -t $(LOAD_IMAGE) app/load_generator
+
+build-frontend:
+	docker build -t $(FRONTEND_IMAGE) app/frontend
 
 deploy:
 	$(KUBECTL) apply -k k8s

@@ -11,3 +11,6 @@ images:
   - name: ghcr.io/andrejerjavec/sushi-load-generator
     newName: devops-sushi-load
     newTag: local
+  - name: ghcr.io/andrejerjavec/sushi-frontend
+    newName: devops-sushi-frontend
+    newTag: local

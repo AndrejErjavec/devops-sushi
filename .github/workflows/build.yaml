@@ -11,6 +11,7 @@ on:
 env:
   IMAGE_API: ghcr.io/andrejerjavec/sushi-api
   IMAGE_LOAD: ghcr.io/andrejerjavec/sushi-load-generator
+  IMAGE_FRONTEND: ghcr.io/andrejerjavec/sushi-frontend
 
 jobs:
   build:
@@ -48,3 +49,12 @@ jobs:
           tags: |
             ${{ env.IMAGE_LOAD }}:latest
             ${{ env.IMAGE_LOAD }}:${{ github.sha }}
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: app/frontend
+          push: true
+          tags: |
+            ${{ env.IMAGE_FRONTEND }}:latest
+            ${{ env.IMAGE_FRONTEND }}:${{ github.sha }}
